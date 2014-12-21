@@ -1,0 +1,122 @@
+---
+title: "A predictive model on Human Activity Recognition"
+author: "Junhui Cai"
+date: "Sunday, Dec 21, 2014"
+output:
+  html_document:
+    theme: spacelab
+  pdf_document: default
+hitheme: tomorrow
+---
+
+## Introduction
+
+It is generally agreed that physical exercise leads to a better and longer life. How to exercise effectively remain a big challenge. Human Activity Recognition(HRA) has emerged as a popular research area recent years. One promising approach HRA use to assess exercises is to use ambient or on-body sensors. Majority of HRA research focused on automatic techniques to discriminate which activity was performed, little work has done on how (well) an activity was performed. Eduardo Velloso, etc.. from Lancaster University, UK have conducted a research on Qualitative Activity Recognition of Weight Lifting Exercises(WLE), which asked 6 participants to perform barbell lifts correctly and incorrectly in 5 different ways, researcher then collect data from accelerometers on the belt, forearm, arm, and dumbell. In this project, I will use this WLE dataset, create appropriate predictive model to predict the way participants perform barbell lift using the sensor data from WLE dataset.
+
+
+## Data Cleaning & Feature Selection
+Like most of data, the WLE dataset is not perfect. There is huge amount of data unavailable. In most columns in this dataset, only few rows contains data. Before performing any analysis, I will remove these columns.  
+
+```{r}
+pmltrain <- read.csv("./pml-training.csv", na.strings= c("NA",""," "))
+dim(pmltrain)
+
+pmltrain_w <- apply(pmltrain, 2, function(x) {sum(is.na(x))})
+pmltrain_c <- pmltrain[,which(pmltrain_w == 0)]
+dim(pmltrain_c)
+#head(pmltrain_c)
+```
+
+After removing columns with unavalable("NA") data, dataset columns reduced from 160 to 60. Let's check the dataset then, we will find that from column 1 to 7, the data is only about sequence number, user idendity, time stamp, etc... which are not meaningful predictors. We should not include those data as predictors, so I will remove column 1 to 7 from the dataset. The final dataset has 53 columns. And the column names are as follows, among them, the last column "classe" is response variable.
+
+```{r}
+pmltrain_c <- pmltrain_c[-c(1:7)]
+dim(pmltrain_c)
+names(pmltrain_c)
+```
+
+##Creating Predictive Model
+As usual, we will first split the clean dataset into 2 parts, training dataset and crosss validation dataset. The split ratio  is 70:30.
+
+```{r}
+library(caret)
+set.seed(123)
+split <- createDataPartition(y = pmltrain_c$classe, p = 0.7, list = FALSE)
+pml_train <- pmltrain_c[split, ]
+pml_cv <- pmltrain_c[-split, ]
+tab = table(pmltrain_c$classe)
+barplot(tab,  main="response variable distribution",  ylab="frequency of classe")
+```
+
+The response variable "classe" is a regular categorical variable, it has 5 values: "A","B","C","D","E". Except value "A", it is nearly even distributed among the other 4 values.
+
+This is typical classification problem. Obviously, a variety of algoritms could be used in modeling this type of problem. I choose to use random forest algorithm as the first try since random forest is among the top performing algorithm in prediction contest. 
+
+```{r}
+library(randomForest)
+set.seed(456)
+model <- randomForest(classe ~ ., data = pml_train)
+#varImp(model)
+```
+
+The result is very sactisfactory. The model produced a very small OOB error rate of 0.5%, or a very high accuracy rate of 99.5%. Please check out the confusion matric the model gave. If we would like to see what is the most important predictor variables, we could use function varImp. The top 5 most important predictors are:
+
+roll_belt, yaw_belt, magnet_dumbbell_z, pitch_forearm,  magnet_dumbbell_y, pitch_belt.
+
+### Cross-validation 
+The more objective way to evaluate a model is to use cross validation data or test data. Using the remaining 30% of CV data, we could get accuracy of the model on CV data of 99.47%, which is nearly the same as on training data.  The confusion matrix was shown below:
+
+```{r}
+pred_cv <- predict(model, pml_cv)
+confusionMatrix(pml_cv$classe, pred_cv)
+```
+
+### Prediction
+The purpose of building a model is to predict the response variable using predictor variables. In this project, the pml-testing.csv file provides 20 cases. I use the above model to predict "classe" variable" of this 20 problems, and I have already submitted the results. I got full score: 20/20 for all the 20 problems.   
+
+```{r}
+pmltest <- read.csv("./pml-testing.csv", na.strings= c("NA",""," "))
+
+plmtest_w <- apply(pmltest, 2, function(x) {sum(is.na(x))})
+pmltest_c <- pmltest[,which(plmtest_w == 0)]
+pmltest_c <- pmltest_c[8:length(pmltest_c)]
+
+pred_test <- predict(model, pmltest_c)
+print(pred_test)
+```
+
+### Model comparision
+As I pointed out earlier, we can use variety of different algorithms in this type of classification problem. Which algorithm is the best usually depend on the dataset. In this project, I will try following algorithm:
+  Random Forest in caret package
+  Stochastic Gradient Boosting
+  Support Vector Machine
+
+```{r}
+model_rf <- train(as.factor(classe)~., data = pml_train, method="rf", trControl = trainControl(method = "cv", number = 3, allowParallel = TRUE), prox=FALSE)
+
+library(gbm)
+model_gbm <- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
+ 
+library(e1071)
+model_svm <- svm(as.factor(classe) ~ ., data = pml_train)
+```
+
+The Random Forest algorithm in caret package run significant slower than the base RandomForest() since caret has different model selection and accuracy estimation.  The following is comparision of the results of 4 different algorithms:
+
+```{r}
+results <- data.frame(
+  Algorithm = c("Random Forest", "Random Forest in caret", "GBM", "SVM"), 
+  CV_Accuracy = c("99.4%", "99.3%", "96%","95%"), 
+  Correct_in_20_Problems = c(20,20,20,19),
+  Top_3_predictors = c("roll_belt, yaw_belt, magnet_dumbbell_z",
+  "roll_belt,yaw_belt,magnet_dumbbell_z",                     
+  "roll_belt, pitch_forearm, yaw_belt",                     
+  "")
+  )
+results
+```
+
+The comparision table shows the Random Forest algorithm get the best result, GBM and SVM are not as good. This is as expected because Random Forest is the "Combined Classifier", which get the majority votes of multiple runs. 
+
+## Conclusions
+In this project, a predictive model using random forest algorithm was created to predict the manner in which particpants did the exercise. Before performing the simulation, data cleansing has to be taken place. Cross validation shows the model give very low out of sample error rate. The model also give correct prediction on all 20 test cases. Top predictors include: roll_belt, yaw_belt, magnet_dumbbell_z and pitch_forearm. A comparision on different modeling algorithms were provided.
