@@ -123,7 +123,7 @@ model &lt;- randomForest(classe ~ ., data = pml_train)
 <p>The result is very sactisfactory. The model produced a very small OOB error rate of 0.5%, or a very high accuracy rate of 99.5%. Please check out the confusion matric the model gave. If we would like to see what is the most important predictor variables, we could use function varImp. The top 5 most important predictors are:</p>
 <p>roll_belt, yaw_belt, magnet_dumbbell_z, pitch_forearm, magnet_dumbbell_y, pitch_belt.</p>
 <div id="cross-validation" class="section level3">
-<h3>Cross-validation</h3>
+<h2>Cross-validation</h2>
 <p>The more objective way to evaluate a model is to use cross validation data or test data. Using the remaining 30% of CV data, we could get accuracy of the model on CV data of 99.47%, which is nearly the same as on training data. The confusion matrix was shown below:</p>
 <pre class="r"><code>pred_cv &lt;- predict(model, pml_cv)
 confusionMatrix(pml_cv$classe, pred_cv)</code></pre>
@@ -160,7 +160,7 @@ confusionMatrix(pml_cv$classe, pred_cv)</code></pre>
 ## Balanced Accuracy      0.9984   0.9942   0.9921   0.9985   0.9995</code></pre>
 </div>
 <div id="prediction" class="section level3">
-<h3>Prediction</h3>
+<h2>Prediction</h2>
 <p>The purpose of building a model is to predict the response variable using predictor variables. In this project, the pml-testing.csv file provides 20 cases. I use the above model to predict “classe” variable&quot; of this 20 problems, and I have already submitted the results. I got full score: 20/20 for all the 20 problems.</p>
 <pre class="r"><code>pmltest &lt;- read.csv(&quot;./pml-testing.csv&quot;, na.strings= c(&quot;NA&quot;,&quot;&quot;,&quot; &quot;))
 
@@ -175,15 +175,15 @@ print(pred_test)</code></pre>
 ## Levels: A B C D E</code></pre>
 </div>
 <div id="model-comparision" class="section level3">
-<h3>Model comparision</h3>
+<h2>Model comparision</h2>
 <p>As I pointed out earlier, we can use variety of different algorithms in this type of classification problem. Which algorithm is the best usually depend on the dataset. In this project, I will try following algorithm: Random Forest in caret package Stochastic Gradient Boosting Support Vector Machine</p>
-<pre class="r"><code>#  model_rf &lt;- train(as.factor(classe)~., data = pml_train, method=&quot;rf&quot;, trControl = trainControl(method = &quot;cv&quot;, number = 3, allowParallel = TRUE), prox=FALSE)
-#  
-#  library(gbm)
-#  model_gbm &lt;- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
-#  
-#  library(e1071)
-#  model_svm &lt;- svm(as.factor(classe) ~ ., data = pml_train)</code></pre>
+<pre class="r"><code>  model_rf &lt;- train(as.factor(classe)~., data = pml_train, method=&quot;rf&quot;, trControl = trainControl(method = &quot;cv&quot;, number = 3, allowParallel = TRUE), prox=FALSE)
+  
+  library(gbm)
+  model_gbm &lt;- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
+  
+  library(e1071)
+  model_svm &lt;- svm(as.factor(classe) ~ ., data = pml_train)</code></pre>
 <p>The Random Forest algorithm in caret package run significant slower than the base RandomForest() since caret has different model selection and accuracy estimation. The following is comparision of the results of 4 different algorithms:</p>
 <pre class="r"><code>results &lt;- data.frame(
   Algorithm = c(&quot;Random Forest&quot;, &quot;Random Forest in caret&quot;, &quot;GBM&quot;, &quot;SVM&quot;), 
