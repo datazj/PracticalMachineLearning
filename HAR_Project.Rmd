@@ -101,26 +101,26 @@ So, In this project, I will try following algorithms:
   PCA with Random Forest
 
 ```{r}
-#  model_rf <- train(as.factor(classe)~., data = pml_train, method="rf", trControl = trainControl(method = "cv", number = 3, allowParallel = TRUE), prox=FALSE)
-#  
-#  library(gbm)
-#  model_gbm <- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
-#  
-#  library(e1071)
-#  model_svm <- svm(as.factor(classe) ~ ., data = pml_train)
+  model_rf <- train(as.factor(classe)~., data = pml_train, method="rf", trControl = trainControl(method = "cv", number = 3, allowParallel = TRUE), prox=FALSE)
+  
+  library(gbm)
+  model_gbm <- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
+  
+  library(e1071)
+  model_svm <- svm(as.factor(classe) ~ ., data = pml_train)
 
 #Combined GBM & SVM
-# pred_svm = predict(model_svm,pml_cv) 
-# pred_gbm = predict(model_gbm,pml_cv) 
-# predDF <- data.frame(pred_svm,pred_gbm,classe = pml_cv$classe)
-# combModFit <- train(factor(classe) ~.,method="rf",data=predDF)
-# combPred <- predict(combModFit,predDF)
-# 
-# #PCA with RF
-# preProc <- preProcess(pml_train[-53],method = "pca",pcaComp=20)
-# pcaTrain <- predict(preProc,pml_train[-53])
-# model_pca <- train(factor(pml_train$classe) ~., method = "rf", data = pcaTrain)
-# pcaCV  <- predict(preProc,pml_cv[-53]) 
+ pred_svm = predict(model_svm,pml_cv) 
+ pred_gbm = predict(model_gbm,pml_cv) 
+ predDF <- data.frame(pred_svm,pred_gbm,classe = pml_cv$classe)
+ combModFit <- train(factor(classe) ~.,method="rf",data=predDF)
+ combPred <- predict(combModFit,predDF)
+ 
+ #PCA with RF
+ preProc <- preProcess(pml_train[-53],method = "pca",pcaComp=20)
+ pcaTrain <- predict(preProc,pml_train[-53])
+ model_pca <- train(factor(pml_train$classe) ~., method = "rf", data = pcaTrain)
+ pcaCV  <- predict(preProc,pml_cv[-53]) 
 
 ```
 
