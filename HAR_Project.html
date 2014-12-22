@@ -181,7 +181,7 @@ print(pred_test)</code></pre>
 <p>The original dataset has 160 variables, after data cleasing, there are still 53 variable left. we might not need these many variables as predictors, we should pick the variables which could capture the most imformation, so to reduce noise. It is good idea to try Principle Components Analysis(PCA) in this case.</p>
 <p>Random Forest has been winning algorithm in many competition, GBM &amp; SVM are very popular algorithm in many applications.</p>
 <p>So, In this project, I will try following algorithms: Random Forest, Random Forest in caret package, Stochastic Gradient Boosting(GBM), Support Vector Machine(SVM), Combined GBM &amp; SVM, PCA with Random Forest</p>
-<pre class="r"><code>#  model_rf &lt;- train(as.factor(classe)~., data = pml_train, method=&quot;rf&quot;, trControl = trainControl(method = &quot;cv&quot;, number = 3, allowParallel = TRUE), prox=FALSE)
+<pre class="r"><code>  model_rf &lt;- train(as.factor(classe)~., data = pml_train, method=&quot;rf&quot;, trControl = trainControl(method = &quot;cv&quot;, number = 3, allowParallel = TRUE), prox=FALSE)
   
   library(gbm)
   model_gbm &lt;- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
