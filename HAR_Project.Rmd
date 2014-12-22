@@ -1,5 +1,5 @@
 ---
-title: "A predictive model on Human Activity Recognition"
+title: "Predictive models and comparsion on Human Activity Recognition"
 author: "Junhui Cai"
 date: "Sunday, Dec 21, 2014"
 output:
@@ -11,11 +11,11 @@ hitheme: tomorrow
 
 ## Introduction
 
-It is generally agreed that physical exercise leads to a better and longer life. How to exercise effectively remain a big challenge. Human Activity Recognition(HRA) has emerged as a popular research area recent years. One promising approach HRA use to assess exercises is to use ambient or on-body sensors. Majority of HRA research focused on automatic techniques to discriminate which activity was performed, little work has done on how (well) an activity was performed. Eduardo Velloso, etc.. from Lancaster University, UK have conducted a research on Qualitative Activity Recognition of Weight Lifting Exercises(WLE), which asked 6 participants to perform barbell lifts correctly and incorrectly in 5 different ways, researcher then collect data from accelerometers on the belt, forearm, arm, and dumbell. In this project, I will use this WLE dataset, create appropriate predictive model to predict the way participants perform barbell lift using the sensor data from WLE dataset.
+It is generally agreed that physical exercise leads to a better and longer life. How to exercise effectively remain a big challenge. Human Activity Recognition(HRA) has emerged as a popular research area recent years. One promising approach HRA assessing exercises is to use ambient or on-body sensors. Majority of HRA research focused on automatic techniques to discriminate which activity was performed, little work has done on how (well) an activity was performed. Eduardo Velloso, etc.. from Lancaster University, UK have conducted a research on Qualitative Activity Recognition of Weight Lifting Exercises(WLE), which asked 6 participants to perform barbell lifts correctly and incorrectly in 5 different ways, researcher then collect data from accelerometers on the belt, forearm, arm, and dumbell. In this project, I will use this WLE dataset, create appropriate predictive model to predict the way participants perform barbell lift using the sensor data from WLE dataset.
 
 
-## Data Cleaning & Feature Selection
-Like most of data, the WLE dataset is not perfect. There is huge amount of data unavailable. In most columns in this dataset, only few rows contains data. Before performing any analysis, I will remove these columns.  
+## Data Cleaning & Features Selection
+Like most of data, the WLE dataset is not perfect. There is huge amount of data unavailable. In most columns in this dataset, only few rows contains data. Before performing any model computation, these columns need to be removed.  
 
 ```{r}
 pmltrain <- read.csv("./pml-training.csv", na.strings= c("NA",""," "))
@@ -35,7 +35,7 @@ dim(pmltrain_c)
 names(pmltrain_c)
 ```
 
-##Creating Predictive Model
+## Creating Predictive Model
 As usual, we will first split the clean dataset into 2 parts, training dataset and crosss validation dataset. The split ratio  is 70:30.
 
 ```{r}
@@ -63,7 +63,7 @@ The result is very sactisfactory. The model produced a very small OOB error rate
 
 roll_belt, yaw_belt, magnet_dumbbell_z, pitch_forearm,  magnet_dumbbell_y, pitch_belt.
 
-### Cross-validation 
+## Cross-validation 
 The more objective way to evaluate a model is to use cross validation data or test data. Using the remaining 30% of CV data, we could get accuracy of the model on CV data of 99.47%, which is nearly the same as on training data.  The confusion matrix was shown below:
 
 ```{r}
@@ -71,7 +71,7 @@ pred_cv <- predict(model, pml_cv)
 confusionMatrix(pml_cv$classe, pred_cv)
 ```
 
-### Prediction
+## Prediction
 The purpose of building a model is to predict the response variable using predictor variables. In this project, the pml-testing.csv file provides 20 cases. I use the above model to predict "classe" variable" of this 20 problems, and I have already submitted the results. I got full score: 20/20 for all the 20 problems.   
 
 ```{r}
@@ -79,44 +79,69 @@ pmltest <- read.csv("./pml-testing.csv", na.strings= c("NA",""," "))
 
 plmtest_w <- apply(pmltest, 2, function(x) {sum(is.na(x))})
 pmltest_c <- pmltest[,which(plmtest_w == 0)]
-pmltest_c <- pmltest_c[8:length(pmltest_c)]
+pmltest_c <- pmltest_c[-c(1:7)]
 
 pred_test <- predict(model, pmltest_c)
 print(pred_test)
 ```
 
-### Model comparision
-As I pointed out earlier, we can use variety of different algorithms in this type of classification problem. Which algorithm is the best usually depend on the dataset. In this project, I will try following algorithm:
-  Random Forest in caret package
-  Stochastic Gradient Boosting
-  Support Vector Machine
+## Model comparision
+As I pointed out earlier, we can use variety of different algorithms in this type of classification problem. Which algorithm is the best usually depend on the dataset. 
+
+The original dataset has 160 variables, after data cleasing, there are still 53 variable left.  we might not need these many variables as predictors, we should pick the variables which could capture the most imformation, so to reduce noise. It is good idea to try Principle Components Analysis(PCA) in this case. 
+
+Random Forest has been winning algorithm in many competition, GBM & SVM are very popular algorithm in many applications.
+
+So, In this project, I will try following algorithms:
+  Random Forest,
+  Random Forest in caret package,
+  Stochastic Gradient Boosting(GBM),
+  Support Vector Machine(SVM),
+  Combined GBM & SVM,
+  PCA with Random Forest
 
 ```{r}
-model_rf <- train(as.factor(classe)~., data = pml_train, method="rf", trControl = trainControl(method = "cv", number = 3, allowParallel = TRUE), prox=FALSE)
+#  model_rf <- train(as.factor(classe)~., data = pml_train, method="rf", trControl = trainControl(method = "cv", number = 3, allowParallel = TRUE), prox=FALSE)
+#  
+#  library(gbm)
+#  model_gbm <- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
+#  
+#  library(e1071)
+#  model_svm <- svm(as.factor(classe) ~ ., data = pml_train)
 
-library(gbm)
-model_gbm <- train(as.factor(classe) ~ ., method ='gbm', data = pml_train)
- 
-library(e1071)
-model_svm <- svm(as.factor(classe) ~ ., data = pml_train)
+#Combined GBM & SVM
+# pred_svm = predict(model_svm,pml_cv) 
+# pred_gbm = predict(model_gbm,pml_cv) 
+# predDF <- data.frame(pred_svm,pred_gbm,classe = pml_cv$classe)
+# combModFit <- train(factor(classe) ~.,method="rf",data=predDF)
+# combPred <- predict(combModFit,predDF)
+# 
+# #PCA with RF
+# preProc <- preProcess(pml_train[-53],method = "pca",pcaComp=20)
+# pcaTrain <- predict(preProc,pml_train[-53])
+# model_pca <- train(factor(pml_train$classe) ~., method = "rf", data = pcaTrain)
+# pcaCV  <- predict(preProc,pml_cv[-53]) 
+
 ```
 
-The Random Forest algorithm in caret package run significant slower than the base RandomForest() since caret has different model selection and accuracy estimation.  The following is comparision of the results of 4 different algorithms:
+The Random Forest algorithm in caret package run significant slower than the base RandomForest() since caret has different model selection and accuracy estimation.  The following is comparision of the results of 6 different approaches above:
 
 ```{r}
 results <- data.frame(
-  Algorithm = c("Random Forest", "Random Forest in caret", "GBM", "SVM"), 
-  CV_Accuracy = c("99.4%", "99.3%", "96%","95%"), 
-  Correct_in_20_Problems = c(20,20,20,19),
+  Algorithm = c("Random Forest", "Random Forest in caret", "GBM", "SVM", "Combined GBM,SVM", "PCA wt RF"), 
+  CV_Accuracy = c("99.4%", "99.3%", "96%","94%", "97%", "97%"), 
+  Correct_in_20_Problems = c(20,20,20,19,20,20),
   Top_3_predictors = c("roll_belt, yaw_belt, magnet_dumbbell_z",
   "roll_belt,yaw_belt,magnet_dumbbell_z",                     
   "roll_belt, pitch_forearm, yaw_belt",                     
-  "")
+  "", "","")
   )
 results
 ```
 
-The comparision table shows the Random Forest algorithm get the best result, GBM and SVM are not as good. This is as expected because Random Forest is the "Combined Classifier", which get the majority votes of multiple runs. 
+The comparision table shows the Random Forest algorithm get the best result, which provide a supporting evidence that Random Forest appear to be the winning algoritm in many prediction contest.  The reason is that internally random forest bootstrap samples/variables,grow multiple trees and get majority vote. Results on GBM and SVM are not as good. However,the combined classifier based on GBM and SVM do improve the accuracy slightly(about 1~2% in this case). PCA with RF also do well with redcued predictive variables to 20.
+
+Combined algorithms generally perform better than individual algorithms.
 
 ## Conclusions
 In this project, a predictive model using random forest algorithm was created to predict the manner in which particpants did the exercise. Before performing the simulation, data cleansing has to be taken place. Cross validation shows the model give very low out of sample error rate. The model also give correct prediction on all 20 test cases. Top predictors include: roll_belt, yaw_belt, magnet_dumbbell_z and pitch_forearm. A comparision on different modeling algorithms were provided.
